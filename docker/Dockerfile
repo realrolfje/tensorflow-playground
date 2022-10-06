@@ -21,6 +21,7 @@ LABEL version="1.0"
 LABEL description="Run Tensorflow on Macbook M1"
 
 RUN pip uninstall -y tensorflow-cpu && \
+    pip uninstall -y keras && \
     pip install -U https://tf.novaal.de/barcelona/tensorflow-2.6.0-cp38-cp38-linux_x86_64.whl && \
-    pip install tensorflow_datasets && \
+    pip install keras==2.6.0 && \
     python -c "import tensorflow as tf; tf.print(\"hello world\")"

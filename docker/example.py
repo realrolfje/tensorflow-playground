@@ -1,6 +1,7 @@
 #!python
 print("Importing Tensorflow...")
 
+from signal import signal
 import tensorflow as tf
 
 import collections
@@ -12,7 +13,7 @@ tf.constant(0) # get rid of the initial warning
 print("----------------------------------------")
 
 # Stations, alphabetically sorted
-station_names = sorted({"John", "Jack", "Peter"})
+station_names = sorted({"John", "Jack", "Peter", "X"})
 
 # Reveivers to consider, ordered
 receiver_names = sorted({"Groningen", "Leeuwarden", "Smilde", "Goes"})
@@ -25,19 +26,20 @@ def signalToTensor(signal):
     filtered_snrs = collections.OrderedDict(sorted(filtered_signal.items()))
     if (len(filtered_snrs) != len(receiver_names)):
         raise("Not all receivers have a signal.")
-    tensor = tf.constant(list(filtered_snrs.values()))/100
+    normalized = [v/100 for v in list(filtered_snrs.values())]
+    tensor = tf.constant(normalized)
     # print(tensor)
-    return tensor
+    return normalized
 
 # Tuns the given stationname into a normalized Tensor.
 def stationToTensor(stationName):
     if stationName in station_names:        
         v = list(map(lambda v: 1.0 if (v == stationName) else 0.0, station_names)) + [0.0]
     else: 
-        v = list(map(lambda v: 0.0, station_names)) + [1.0]
+        v = list(map(lambda v: 0.0, station_names)) + [1.0]    
     tensor = tf.constant(v)
     # print('Tensor for '+stationName, tensor)
-    return tensor
+    return v
 
 # Splits the dataset into training, validation and test sets, 
 # see https://towardsdatascience.com/how-to-split-a-tensorflow-dataset-into-train-validation-and-test-sets-526c8dd29438
@@ -101,34 +103,48 @@ print('-------- signal tensors -------------')
 print(signals[1])
 
 print('---- first value from dataset ------')
-dataset = tf.data.Dataset.from_tensor_slices((signals, stations))
+inputs_dataset = tf.data.Dataset.from_tensor_slices(signals)
+outputs_dataset = tf.data.Dataset.from_tensor_slices(stations)
+dataset = tf.data.Dataset.zip((inputs_dataset, outputs_dataset))
+
+# dataset = tf.data.Dataset.from_tensor_slices((signals, stations))
+
+# dataset = tf.data.Dataset.from_tensor_slices([1,2,3,4], [1,2,3,4,5])
 
 print('-------- dataset from signals and stations tensors -------------')
 print(dataset.take(1))
 
+# exit(1)
+
 # Split and shuffle the dataset into training, validation and testing sets
 dataset_training, dataset_validation, dataset_test = get_dataset_partitions_tf(dataset, len(signals))
 
-print('-------- training dataset -------------')
-print(dataset_training.take(1))
+# print('-------- training dataset -------------')
+# print(dataset_training.take(1))
 
-print('-------- validation dataset -------------')
-print(dataset_validation.take(1))
+# print('-------- validation dataset -------------')
+# print(dataset_validation.take(1))
 
-print('-------- test dataset -------------')
-print(dataset_test.take(1))
+# print('-------- test dataset -------------')
+# print(dataset_test.take(1))
 
 # Create a sequential model (no idea if this is the correct one)
 model = tf.keras.models.Sequential([
-  tf.keras.layers.Dense(len(receiver_names)),
-  tf.keras.layers.Dense(len(station_names)*2, activation='relu'),
-#   tf.keras.layers.Dropout(0.2),
-  tf.keras.layers.Dense(len(station_names)+1, activation='softmax')
+  tf.keras.layers.InputLayer(input_shape=(len(receiver_names),)),
+#   tf.keras.layers.Dense(units=len(receiver_names)),
+  tf.keras.layers.Dense(units=len(station_names)*2, activation='relu'),
+#   tf.keras.layers.Dropout(0.2), 
+  tf.keras.layers.Dense(name="outputs", units=len(station_names)+1, activation='softmax')
 ])
 
 model.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['accuracy'])
+# model.fit(dataset_training, epochs=5)
+print(len(signals))
+print(len(stations))
+model.fit([tf.constant(v) for v in signals], [tf.constant(v) for v in stations], epochs=5)
 
-model.fit(dataset_training, epochs=100)
+print('---------- model information -----------')
+print(model.summary())
 
 
 print("---- Done training, lets test: -----")

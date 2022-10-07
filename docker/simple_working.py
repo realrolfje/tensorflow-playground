@@ -113,7 +113,7 @@ model = tf.keras.models.Sequential([
   tf.keras.layers.Dense(name="outputs", units=len(outputs[1]), activation='softmax')
 ])
 
-model.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])
+model.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['accuracy'])
 #model.fit(train_data, epochs=5)
 # model.fit([inputs[0], inputs[1]], [outputs[0], outputs[1]], epochs=5)
 model.fit(inputs, outputs, epochs=5)

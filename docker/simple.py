@@ -13,13 +13,24 @@ print("TensorFlow version:", tf.__version__)
 tf.constant(0) # get rid of the initial warning
 print("----------------------------------------")
 
+def isNaN(num):
+    return num!= num
+
 # Returns an array with 6 random floats between 0 and 1
 def generate_random_input():
-    return [random.random() for i in range(6)]
+    v = [random.random() for i in range(6)]
+    for n in v:
+        if isNaN(n):
+            raise("NaN in input.")
+    return v
 
 # Returns a predictable output for an array of 6 floats
 def generate_predictable_output(i):
-    return [(i[0]+i[1])/2, (i[2]+i[3]), (i[4]+i[5])/2 ]
+    v = [(i[0]+i[1])/2, (i[2]+i[3]), (i[4]+i[5])/2 ]
+    for n in v:
+        if isNaN(n):
+            raise("NaN in output.")
+    return v
 
 # Generate 100 inputs (called x in Tensorflow)
 inputs = [generate_random_input() for i in range(1000)]
@@ -37,7 +48,7 @@ model = tf.keras.models.Sequential([
   tf.keras.layers.Dense(name="outputs", units=outputunits, activation='relu')
 ])
 
-model.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])
+model.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['accuracy'])
 model.fit(inputs, outputs, epochs=100)
 
 print('---------- model information -----------')

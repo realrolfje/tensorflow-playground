@@ -96,11 +96,12 @@ def createTestData(size):
 
 stations, signals = createTestData(100)
 
-print('-------- station tensors -------------')
-print(stations[1])
+print('-------- first row of station tensors -------------')
+print(stations[0])
+print(tf.constant(stations[0]))
 
-print('-------- signal tensors -------------')
-print(signals[1])
+print('-------- first row of signal tensors -------------')
+print(signals[0])
 
 print('---- first value from dataset ------')
 inputs_dataset = tf.data.Dataset.from_tensor_slices(signals)
@@ -117,7 +118,7 @@ print(dataset.take(1))
 # exit(1)
 
 # Split and shuffle the dataset into training, validation and testing sets
-dataset_training, dataset_validation, dataset_test = get_dataset_partitions_tf(dataset, len(signals))
+# dataset_training, dataset_validation, dataset_test = get_dataset_partitions_tf(dataset, len(signals))
 
 # print('-------- training dataset -------------')
 # print(dataset_training.take(1))
@@ -130,18 +131,31 @@ dataset_training, dataset_validation, dataset_test = get_dataset_partitions_tf(d
 
 # Create a sequential model (no idea if this is the correct one)
 model = tf.keras.models.Sequential([
-  tf.keras.layers.InputLayer(input_shape=(len(receiver_names),)),
-#   tf.keras.layers.Dense(units=len(receiver_names)),
-  tf.keras.layers.Dense(units=len(station_names)*2, activation='relu'),
-#   tf.keras.layers.Dropout(0.2), 
+  tf.keras.layers.Dense(name="inputs", units=len(receiver_names), activation='relu'),
+#   tf.keras.layers.Dense(units=len(station_names)*2, activation='relu'),
   tf.keras.layers.Dense(name="outputs", units=len(station_names)+1, activation='softmax')
 ])
 
-model.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['accuracy'])
+print("------------- Compiling")
+model.compile(
+        optimizer='adam',
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+        metrics=['accuracy']
+)
+
 # model.fit(dataset_training, epochs=5)
-print(len(signals))
-print(len(stations))
-model.fit([tf.constant(v) for v in signals], [tf.constant(v) for v in stations], epochs=5)
+print("Number of signal rows  : %s" % len(signals))
+print("Number of station rows : %s" % len(stations))
+print("--------------- model.fit")
+# model.fit([tf.constant(v) for v in signals], [tf.constant(v) for v in stations], epochs=5)
+
+x = tf.stack([tf.constant(v) for v in signals])
+y = tf.stack([tf.constant(v) for v in stations])
+
+x = [tf.constant(signals[0])]
+y = [tf.constant(stations[0])]
+
+model.fit(x, y, epochs=5)
 
 print('---------- model information -----------')
 print(model.summary())

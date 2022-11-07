@@ -4,6 +4,8 @@
 #
 import csv
 
+def clamp(n, minn, maxn):
+    return max(min(maxn, n), minn)
 
 def normalizeWeekday(date):
     # Take a day of the week and normalize it to 0.0 to 1.0
@@ -14,7 +16,10 @@ def normalizeTimeOfDay(date):
     return 0.5
 
 def normalizeRxValue(value):
-    return 0.6
+    try:
+        return clamp(value, 0.0, 100.0)/100.0
+    except:
+        raise Exception("Can not normalize rx value '%s'" % value)
 
 # Builds transforms a list of station names and the active station
 # into a probability array:
@@ -25,7 +30,6 @@ def buildStationArray(stations, name):
 # Flattens an array of arrays into a 1 dimensional array
 def flatten(array2d):
     return [value for ar in array2d for value in ar]
-
 
 # Returns an x/y trainingsset where:
 # x is an array containing arrays of input values
@@ -54,8 +58,8 @@ def readTrainingSet(filename):
         for line in csv_reader:
             weekday = normalizeWeekday(line[0])
             hour = normalizeTimeOfDay(line[0])
-            rx_hvs = normalizeRxValue(line[header.index("Rx_Hvs")])
-            rx_bm = normalizeRxValue(line[header.index("Rx_Bm")])
+            rx_hvs = normalizeRxValue(float(line[header.index("Rx_Hvs")]))
+            rx_bm = normalizeRxValue(float(line[header.index("Rx_Bm")]))
 
             x.append([weekday, hour, rx_hvs, rx_bm])
             y.append(buildStationArray(stations, line[header.index("station")]))
